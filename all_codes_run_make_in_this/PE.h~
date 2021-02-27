@@ -1,0 +1,151 @@
+#ifndef PE_H
+#define PE_H
+
+#include <unistd.h>
+#include "Node.h"
+#include "Node.cc"
+
+//MD
+#include "DrawFloorplan.h"
+//DM
+
+#include <unordered_map>
+
+#define LAMBDA 0.5;
+
+class PE {
+
+    
+    public:
+
+        //Variable
+
+        
+        // Constructors
+        PE();
+        
+        PE(PE*);
+        
+        PE(size_t, size_t);
+
+        // Destructor
+        ~PE();
+
+        // Overloaded Operators
+
+        PE& operator=(PE&);
+
+        // Access Functions
+        
+        Node** PePtr();
+        Node* PePtr(size_t);
+        Net** NetPtr();
+        Net* NetPtr(size_t);
+        size_t PeLength();
+        size_t AllNetsLength();
+
+        unordered_map<string, size_t>* FastAccessModules();
+
+        int* OperandIds();
+        int* OperatorIds();
+        int* ValidityArray();
+
+
+        float ParSaTempInit();
+        float ParSaTemp();
+        float ParSaTempDelta();
+
+        Node* HeadPtr();
+        float TotalHpwl();
+        // Store Functions
+        
+        void StorePeLength(size_t);
+        void StoreAllNetsLength(size_t);
+
+        // Return Function
+        Node* NodeAt(size_t);
+        Net* NetAt(size_t);
+
+        // Functions
+
+        void CreateTree();
+        void InitializeDimensions(Node*);
+        void InitializeDimensions();
+        void CreateFastAccessModule();
+
+        void UpdateNetlist(size_t, const char*);
+
+        void ComputeHpwl();
+        void InitializeTotalHpwl();
+
+        // Moves
+        void Move1(size_t, size_t);
+        void Move2(size_t);
+        void Move3(size_t);
+        void Move4(size_t);
+
+
+        // Algorithms Appendix
+
+        int SelectSaMove();
+
+        bool Move2Validity(int&);
+        bool Move3Validity(int&);
+
+        void SelectSaModules(int&, int&, int&);
+
+        float Cost();
+
+        float CustomizeStatic();
+
+        // Algorithms
+        
+        void Sa();
+
+        
+        // Debugging
+        void PrintPostOrder(Node*);
+        void PrintPostOrder();
+        void PrintNetlist(); //Checks modules in Net
+        void PrintNetsPerModule(); //Checks all nets per module
+        void PrintAllHpwl();
+
+
+        //Retrieve Functions
+
+        unordered_map<string, size_t>* GetFastAccessModule();
+        
+        
+
+    private:
+
+        Node** pePtr;
+        Net** netPtr;
+        size_t peLength;
+        size_t allNetsLength;
+
+        unordered_map<string, size_t>* fastAccessModules;
+
+        int* operandIds;
+        int* operatorIds;
+        int* validityArray;
+
+        // Parameters
+
+        float parSaTempInit;
+        float parSaTemp;
+        float parSaTempDelta;
+
+        Node* headPtr;
+        float totalHpwl;
+        
+        // MD
+        	DrawFloorplan df;
+        // DM
+
+
+};
+
+
+
+#endif

@@ -1,0 +1,56 @@
+// MD
+#ifndef DRAWFLOORPLAN_H
+#define DRAWFLOORPLAN_H
+
+#include <iostream>
+#include <math.h>
+#include <GL/glut.h>
+#include <GL/glext.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+class DrawFloorplan {
+
+	public:
+		void drawFloorplan(string title, size_t Num_Modules, int argc, char**& argv);
+		void timer(int);
+		void reshape(int w, int h);
+		void display(void);
+		void drawRect();
+		void drawGrid();
+		void init();
+		void keyPressed(unsigned char key, int x, int y);
+		void loadPolishAttributes(unsigned char key);
+
+	private:
+		int win_id;
+		int num_modules;
+		vector<string> value;
+		vector<float> width;
+		vector<float> height;
+		vector<float> x;
+		vector<float> y;
+		vector<float> cx;
+		vector<float> cy;
+		
+		vector<float> color1;
+		vector<float> color2;
+		vector<float> color3;
+
+		int winW;
+		int winH; 
+		float aspect;
+		float max_width;
+		float max_height;
+		float max_scale;
+
+
+
+};
+
+#endif
+// DM

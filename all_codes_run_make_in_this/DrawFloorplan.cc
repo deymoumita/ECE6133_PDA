@@ -1,0 +1,413 @@
+// MD
+
+#include <iostream>
+#include <fstream>
+#include <string.h>
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include <time.h>
+#include <map>
+#include <GL/glut.h>
+#include <GL/glext.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <vector>
+#include <string>
+
+#include "DrawFloorplan.h"
+
+#define TEMPSIZE 8
+
+using namespace std;
+
+DrawFloorplan* currentObject;
+
+extern "C" void displayC()
+{
+	currentObject -> display();
+}
+
+extern "C" void reshapeC(int w, int h)
+{
+ 	currentObject -> reshape(w, h);
+}
+
+extern "C" void keyPressedC(unsigned char key, int x, int y) 
+{
+	currentObject -> keyPressed(key, x, y);
+}
+
+void DrawFloorplan::init()
+{
+	//select clearing (background) color
+	glClearColor(1.0, 1.0, 1.0, 1.0);
+	glShadeModel(GL_FLAT);
+}
+
+// draws grid in background
+void DrawFloorplan::drawGrid()
+{
+    glColor3f(0.9, 0.9, 0.9);
+
+    int inc;
+    int ax_limit = max_scale;
+    if (max_scale <= 100)
+    {
+    	inc = 1;
+    	ax_limit = max(winW, winH);    	
+    }
+    else
+    {
+    	inc = 100;    	
+    }
+
+    int j = 0;
+    while (j < ax_limit)
+    {
+    	glBegin(GL_LINES);
+		glVertex2f(0, j);
+		glVertex2f(ax_limit, j);
+		glEnd();
+    	glBegin(GL_LINES);
+		glVertex2f(j, 0);
+		glVertex2f(j, ax_limit);
+		glEnd();		
+		j+=inc;
+    }
+   
+}
+
+// draws all the modules 
+void DrawFloorplan::drawRect()
+{
+	for(int i = 0; i < num_modules; i++)
+	{
+		glBegin(GL_POLYGON);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		string str = "";
+		for(int j = 1; j < strlen(value[i].c_str()); j++)
+		{
+			str += value[i][j];
+		}
+		int index = atoi(str.c_str());
+		glColor3f(color1[index], color2[index], color3[index]);
+		//cout<<color1[index]<<" "<<color2[index]<<" "<<color3[index]<<endl;
+//		glRectf(X[i], Y[i], (float)(X[i] + Width[i]), (float)(Y[i] + Height[i]));
+		glVertex2f(x[i], y[i]);
+		glVertex2f(x[i] + width[i], y[i]);
+		glVertex2f(x[i] + width[i], y[i] + height[i]);
+		glVertex2f(x[i], y[i] + height[i]);
+		glEnd();
+
+		// to display module names
+	/*	glColor3f(0.0, 0.0, 0.0);
+   		glRasterPos2f((x[i] + width[i]/2), (y[i] + height[i]/2));
+		int len, j;
+   		len = (int)strlen(value[i].c_str());
+		for (j = 0; j < len; j++)
+		{
+			
+     		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, value[i][j]);
+    	}*/
+	}
+
+	for(int i = 0; i < num_modules; i++)
+	{
+		glBegin(GL_LINE_LOOP);
+		glColor3f(0.0, 0.0, 0.0);
+		glVertex2f(x[i], y[i]);
+		glVertex2f(x[i] + width[i], y[i]);
+		glVertex2f(x[i] + width[i], y[i] + height[i]);
+		glVertex2f(x[i], y[i] + height[i]);		
+		glEnd();
+	}
+
+}
+
+// main display function
+void DrawFloorplan::display(void)
+{
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glLoadIdentity();
+
+	glColor3f(0.0, 0.0, 0.0);
+	glRasterPos2f(winH / 2, winW-18);
+	string menu = "MENU -> i: Initial FP, a: SA FP, s: Stockmeyer FP, e: EXIT";
+	int len, j;
+	len = (int)strlen(menu.c_str());
+	for (j = 0; j < len; j++)
+	{
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, menu[j]);
+	}
+
+	// glColor3f(0.0, 0.0, 0.0);
+	// glRasterPos2f(winH / 2, winW-36);
+	// menu = "Area = " + to_string(max_width) + " x " + to_string(max_height) + " = " + to_string(max_height * max_width);
+	// len = (int)strlen(menu.c_str());
+	// for (j = 0; j < len; j++)
+	// {
+	// 	glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, menu[j]);
+	// }
+
+	max_scale = max(max_width, max_height);
+
+	glColor3f(0.0, 0.0, 0.0);
+	glRasterPos2f(winH / 2, winW-36);
+	long long int scale_grid = 1;
+	if (max_scale > 100)
+		scale_grid = 100;
+	menu = "Scale: 1 axis unit = " + to_string(scale_grid) + " length units.";
+	len = (int)strlen(menu.c_str());
+	for (j = 0; j < len; j++)
+	{
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, menu[j]);
+	}
+
+	
+	glScalef(winW/max_scale, winW/max_scale, -winW/max_scale);
+	drawGrid();
+	drawRect();			
+
+	glutSwapBuffers(); // If double buffering
+}
+
+void DrawFloorplan::reshape(int w, int h)
+{
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	int width = h * aspect;
+	int left = (w - width) / 2; 
+	glViewport(left, 0, width, (GLsizei)h);
+
+	glOrtho(0.0, winW, 0.0, winH, -winW, winW);
+	glMatrixMode(GL_MODELVIEW);	
+	glutPostRedisplay();
+}
+
+void DrawFloorplan::keyPressed(unsigned char key, int x, int y) 
+{  	
+	if (key == 'i')
+	{
+		glutPostRedisplay();
+		loadPolishAttributes('i');
+		::currentObject = this;
+		::glutDisplayFunc(::displayC);
+		::glutReshapeFunc(::reshapeC);
+
+		::glutKeyboardFunc(::keyPressedC); // Tell GLUT to use the method "keyPressed" for key presses  
+
+	}
+	else if (key == 'a')
+	{
+		glutPostRedisplay();
+		loadPolishAttributes('f');
+		::currentObject = this;
+		::glutDisplayFunc(::displayC);
+		::glutReshapeFunc(::reshapeC);
+
+		::glutKeyboardFunc(::keyPressedC); // Tell GLUT to use the method "keyPressed" for key presses  
+
+	}
+    else if (key == 's')
+    {
+		glutPostRedisplay();
+		loadPolishAttributes('s');
+		::currentObject = this;
+		::glutDisplayFunc(::displayC);
+		::glutReshapeFunc(::reshapeC);
+
+		::glutKeyboardFunc(::keyPressedC); // Tell GLUT to use the method "keyPressed" for key presses  
+        
+    }
+	else if (key == 'e')
+	{
+		glutDestroyWindow(win_id);
+		exit(0);		
+	}
+
+
+}  
+
+
+// read module details from polish.txt depending upon which floorplan has to be displayed
+void DrawFloorplan::loadPolishAttributes(unsigned char key)
+{
+	string line = "";
+	int count = 0;
+	string str = "";
+	string marker = "Intial";
+
+	if (key == 'i')
+	{
+		marker = "Initial";
+	}
+	else if (key == 'f')
+	{
+		marker = "Annealing";
+	}
+    else if (key == 's')
+    {
+        marker = "Stockmeyer";
+    }
+
+	value.clear();
+	x.clear();
+	y.clear();
+	width.clear();
+	height.clear();
+	cx.clear();
+	cy.clear();
+	max_height = 0;
+	max_width = 0;
+
+
+	string fname = "polish.txt";
+	ifstream myfile (fname.c_str());
+	if (myfile.is_open())
+	{
+		while (getline (myfile,line))
+		{
+			if (line == marker)
+	  		{
+	    		for (int l = 0; l < num_modules; l++)
+	    		{
+					getline (myfile,line);
+					count = 0;
+					str = "";
+					for(int i = 0; i < line.size() + 1; i++)
+					{
+						//cout<<int(line[i])<<" ";
+						if (((int)line[i] == 32) || (i == line.size()))
+						{
+							if (count == 0)
+						    {
+						        // read Module name
+						    	value.push_back(str);
+						    	//cout<<str<<" ";
+								count++;
+								str = "";
+						    }
+							else if (count == 1)
+							{
+								// read x
+								x.push_back(atof(str.c_str()));
+								//cout<<str<<" ";
+								count++;
+								str = "";
+							}
+							else if (count == 2)
+							{
+								// read y
+								y.push_back(atof(str.c_str()));
+								//cout<<str<<" ";
+								count++;
+								str = "";
+							}
+							else if (count == 3)
+							{
+								// read width
+								width.push_back(atof(str.c_str()));
+								//cout<<str<<" ";
+								count++;
+								str = "";
+							}
+							else if (count == 4)
+							{
+								// read height
+								height.push_back(atof(str.c_str()));
+								//cout<<str<<endl;
+								count++;
+								str = "";
+							}
+							else if (count == 5)
+							{
+								// read centroid x
+								cx.push_back(atof(str.c_str()));
+								//cout<<str<<endl;
+								count++;
+								str = "";
+							}
+							else if (count == 6)
+							{
+								// read centroid y
+								cy.push_back(atof(str.c_str()));
+								//cout<<str<<endl;
+								count++;
+								str = "";
+							}
+
+						}
+						else
+						{
+							str += line[i];
+						}
+	    			}
+	    		}
+		    }
+		}
+	}
+
+
+	for (int i = 0; i < num_modules; i++)
+	{
+		if (x[i] + width[i] > max_width)
+		{
+			max_width = x[i] + width[i];
+		}
+		if (y[i] + height[i] > max_height)
+		{
+			max_height = y[i] + height[i];
+		}
+	}
+}
+
+// main function call to the GUI
+void DrawFloorplan::drawFloorplan(string title, size_t Num_Modules, int argc, char**& argv)
+{
+
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitWindowSize(500, 500);
+	glutInitWindowPosition(300, 100);
+
+	num_modules = Num_Modules;
+
+	winW = 512;
+	winH = 512;	
+	aspect = (float)winW/(float)winH;
+
+
+
+
+	for(int i = 0; i < num_modules; i++)
+	{	
+		srand(time(NULL) * (i + 1) / 13);
+		color1.push_back((rand() % 100) / 100.0);
+		//cout<<color1[i]<<" ";
+
+		srand(time(NULL) * (i + 2) / 53);
+		color2.push_back((rand() % 100) / 100.0);
+		//cout<<color2[i]<<" ";
+
+		srand(time(NULL) * (i + 7) / 23);
+		color3.push_back((rand() % 100) / 100.0);
+		//cout<<color3[i]<<endl;
+	}
+
+	win_id = glutCreateWindow(title.c_str());
+	init();
+
+	loadPolishAttributes('i');
+	::currentObject = this;
+	::glutDisplayFunc(::displayC);
+	::glutReshapeFunc(::reshapeC);
+
+	::glutKeyboardFunc(::keyPressedC); // Tell GLUT to use the method "keyPressed" for key presses  
+
+	glutMainLoop();	
+}
+
+// #endif
+//DM

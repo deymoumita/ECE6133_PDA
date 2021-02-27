@@ -1,0 +1,57 @@
+Polish Expression Floorplanning : Simulated Annealing
+Created by Anirudha Kurhade and Moumita Dey for ECE6133 Physical Design Automation
+
+File list:
+
+* All .h files are the header files for their .cc counterparts
+* Please refer to the .h files for description of functions or variables as they have been defined and described in the .h files itself
+
+Floorplan.cc - The top most file containing the call for the algorithm to be executed, takes input command line arguments
+Algorithms.h/.cc - Contains the main function calls to the different aspects of the program, i.e. read file, create initial polish expression, call simulated annealing and stockmeyer algorithm, open GUI
+Readfile.h/.cc - Parses the input benchmark file and converts useful data into appropriate data structures to be fed to the program
+DrawFloorplan.h/.cc - OpenGL code to display the GUI
+PE.h/.cc - Contains major functions pertaining to the PE data structure; simulated annealing and stockmeyer algorithms
+Node.h/.cc - The lowest file in hierarchary that contains data structures for each element (operator/operand) in the PE
+
+Output files generated:
+polish.txt - contains module details after each stage in the algorithm which is used by DrawFloorplan.cc to display GUI
+
+benchmarks folder:
+Contains the provided benchmarks on the website. Also contains a small test case under test.fp
+
+
+Makefile:
+make clean - clean all executables
+make - make all headers
+
+Running instructions:
+first make as -
+	make
+	
+To run, use format - 
+	./Floorplan <algorithm_type> <option> <file_path>
+	
+	where <algorithm_type> can be-
+		SA - Simulated Annealing
+		SASM - Simulated annealing followed by stockmeyer algorithm
+		SM - Stockmeyer algorithm
+	options 0 to 5 are shortcuts to existing benchmarks- 
+		0 = test.fp
+		1 = fft.fp
+		2 = industry.fp
+		3 = mult.fp
+		4 = processor.fp
+		5 = rca.fp
+	option 6 is to specify user specified benchmark with <file_path> as path of the file
+	
+	eg:
+		./Floorplan SASM 6 benchmarks/fft.fp
+		
+		will run simulated annealing and stockmeyer as post processing on the file fft.fp present in benchmarks folder
+		
+		./Floorplan SA 1
+		
+		will run only the simulated annealing algorithm on the already present file fft.fp  
+		
+****IMPORTANT****
+Please make sure to ssh into ecelinsrvx as ssh -XY to invoke X11 forwarding, else it will give freeglut errors of not being able to open the display
